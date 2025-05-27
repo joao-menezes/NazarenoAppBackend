@@ -4,6 +4,8 @@ import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 import UserModel from "../model/user.model";
+import {UserController} from "./user.controller";
+import presenceModel from "../model/presence.model";
 
 export class PresenceController{
     static async getPresence(req: Request, res: Response){
@@ -24,48 +26,57 @@ export class PresenceController{
     }
 
     static async createPresence(req: Request, res: Response) {
-       try{
-           const { userId } = req.body
+        try {
+            const { userId } = req.body;
 
-           if (!userId) {
-               res.status(HttpCodes.BAD_REQUEST).json({ error: "User ID is required." });
-               return;
-           }
+            if (!userId) {
+                res.status(HttpCodes.BAD_REQUEST).json({ error: "User ID is required." });
+                return
+            }
 
-           const user = await UserModel.findByPk(userId);
-           if (!user) {
-               res.status(HttpCodes.NOT_FOUND).json({ error: "User not found." });
-               return;
-           }
+            const user = await UserModel.findByPk(userId);
+            if (!user) {
+                res.status(HttpCodes.NOT_FOUND).json({ error: "User not found." });
+                return
+            }
 
-           const existingPresence = await PresenceModel.findOne({ where: { userId } });
+            let presence = await PresenceModel.findOne({ where: { userId } });
 
-           if (existingPresence) {
-               existingPresence.presenceCount += 1;
-               await existingPresence.save();
-               logger.info(`Presence updated for user: ${userId}`);
-               res.status(HttpCodes.OK).json({
-                   message: "Presence updated successfully",
-                   presence: existingPresence,
-               });
-               return;
-           }
+            if (presence) {
+                presence.presenceCount += 1;
+                await presence.save();
 
-           const newPresence = await PresenceModel.create({
-               userId,
-               presenceCount: 1
-           });
+                // Atualiza o campo attendance do User com o novo presenceCount
+                await user.update({ attendance: presence.presenceCount });
 
-           logger.info(`Presence created for user: ${userId} - ${__filename}`);
-           res.status(HttpCodes.CREATED).json({
-               message: "Presence recorded successfully",
-               presence: newPresence,
-           });
-       }catch (error) {
-           logger.error(`Error creating presence: ${error} - ${__filename}`);
-           res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
-           return;
-       }
+                logger.info(`Presence updated for user: ${userId}`);
+                res.status(HttpCodes.OK).json({
+                    message: "Presence updated successfully",
+                    presence: presence,
+                });
+                return
+            }
+
+            // Caso não exista presença anterior, cria
+            presence = await PresenceModel.create({
+                userId,
+                presenceCount: 1,
+            });
+
+            await user.update({ attendance: presence.presenceCount });
+
+            logger.info(`Presence created for user: ${userId} - ${__filename}`);
+            res.status(HttpCodes.CREATED).json({
+                message: "Presence recorded successfully",
+                presence: presence,
+            });
+            return
+
+        } catch (error) {
+            logger.error(`Error creating presence: ${error} - ${__filename}`);
+            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
+            return
+        }
     }
 
     static async updatePresence(req: Request, res: Response) {
@@ -73,6 +84,12 @@ export class PresenceController{
             const { presenceId, userId, presenceCount } = req.body;
 
             const presence = await PresenceModel.findOne({ where: { presenceId } });
+
+            const user = await UserModel.findByPk(userId);
+            if (!user) {
+                res.status(HttpCodes.NOT_FOUND).json({ error: "User not found." });
+                return;
+            }
 
             if(!presence) {
                 res.status(HttpCodes.NOT_FOUND).json(SharedErrors.PresenceNotFound);

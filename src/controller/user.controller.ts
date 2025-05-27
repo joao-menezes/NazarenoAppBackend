@@ -4,6 +4,7 @@ import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 import {RoleEnum} from "../shared/utils/enums/role.enum";
+import {UserService} from "../services/user.service";
 
 function calculateAge(birthDate: Date): number {
     const today = new Date();
@@ -20,7 +21,7 @@ export class UserController{
 
     static async getUsers(req: Request, res: Response): Promise<void> {
         try {
-            const users = await UserModel.findAll();
+            const users = await UserService.findAll();
             if (!users){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
@@ -37,7 +38,7 @@ export class UserController{
     static async getUserById(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
-            const user: UserModel | null = await UserModel.findByPk(userId);
+            const user: UserModel | null = await UserService.findById(userId);
             if (!user){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
@@ -53,7 +54,7 @@ export class UserController{
 
     static async createUser(req: Request, res: Response): Promise<void> {
         try {
-            const { username, birthDate, role } = req.body;
+            const { username, birthDate, role, phoneNumber, roomName, userPicUrl } = req.body;
 
             if (!username || !birthDate || !role) {
                 res.status(HttpCodes.BAD_REQUEST).json({
@@ -74,9 +75,9 @@ export class UserController{
                 birthDate,
                 role,
                 attendance: 0,
-                phoneNumber: '',
-                roomName: '',
-                userPicUrl: '',
+                phoneNumber,
+                roomName,
+                userPicUrl,
             });
 
             logger.info(`User created successfully - ${__filename}`);

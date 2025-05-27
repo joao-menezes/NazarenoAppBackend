@@ -13,6 +13,14 @@ export class UserService {
     static async findById(userId: string) {
         try {
             return await UserModel.findByPk(userId);
+        }catch (error) {
+            throw new Error(`Error fetching users: ${error}`);
+        }
+    }
+
+    async findById(userId: string) {
+        try {
+            return await UserModel.findByPk(userId);
         } catch (error) {
             throw new Error(`Error fetching users: ${error}`);
         }
