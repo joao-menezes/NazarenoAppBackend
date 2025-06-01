@@ -1,9 +1,13 @@
 import PDFDocument from 'pdfkit';
 import { Response } from 'express';
-import { User } from '../interface/user.interface';
+import UserModel from "../model/user.model";
+import PresenceModel from "../model/presence.model";
+import RoomModel from "../model/room.model";
+
+;
 
 export class PDFService {
-    generateAttendanceReport(res: Response, users: User[]) {
+    async generateAttendanceReport(res: Response, users: UserModel[]) {
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
         res.setHeader('Content-Type', 'application/pdf');
@@ -47,12 +51,29 @@ export class PDFService {
         let rowY = headerBottom + 10;
         doc.font('Helvetica').fontSize(11);
 
-        users.forEach((user) => {
+        // 🔥 Consulta com JOIN entre User e Presence
+        users = await UserModel.findAll({
+            include: [
+                {
+                    model: PresenceModel,
+                    attributes: ['presenceCount'],
+                },
+                {
+                    model: RoomModel,
+                    attributes: ['roomName']
+                }
+            ],
+        });
+
+        users.forEach((user: any) => {
+            const presenceCount = user.Presences?.[0]?.presenceCount ?? 0;
+            const roomName = user.Room?.roomName ?? '-';
+
             doc
                 .text(user.username, columnPositions.name, rowY, { width: 140 })
-                .text(user.roomName ?? '-', columnPositions.room, rowY, { width: 80 })
+                .text(roomName, columnPositions.room, rowY, { width: 80 })
                 .text(this.translateRole(user.role), columnPositions.role, rowY, { width: 80 })
-                .text(user.attendance.toString(), columnPositions.attendance, rowY, { width: 80 });
+                .text(presenceCount.toString(), columnPositions.attendance, rowY, { width: 80 });
 
             rowY += 20;
         });

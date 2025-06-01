@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import {RoleEnum} from "../shared/utils/enums/role.enum";
 
 export const up = async (queryInterface, Sequelize) => {
     await queryInterface.createTable('users', {
@@ -17,7 +18,7 @@ export const up = async (queryInterface, Sequelize) => {
         allowNull: false,
       },
       role: {
-        type: DataTypes.ENUM('Admin', 'Student', 'Teacher'),
+        type: DataTypes.ENUM(...Object.values(RoleEnum)),
         allowNull: false,
       },
       userPicUrl: {

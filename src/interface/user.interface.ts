@@ -6,10 +6,10 @@ export interface User {
     userPicUrl?: string,
     username: string,
     birthDate: Date,
-    roomName?: string,
+    roomId?: string,
     role: RoleEnum,
-    phoneNumber?: string,
-    attendance: number
+    isProfessor?: boolean,
+    phoneNumber?: string
 }
 
 export interface UserOptional extends Optional<User, 'userId'> {}

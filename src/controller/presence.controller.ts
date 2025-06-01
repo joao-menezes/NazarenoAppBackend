@@ -6,6 +6,7 @@ import logger from "../shared/utils/logger";
 import UserModel from "../model/user.model";
 import {UserController} from "./user.controller";
 import presenceModel from "../model/presence.model";
+import moment from 'moment';
 
 export class PresenceController{
     static async getPresence(req: Request, res: Response){
@@ -24,58 +25,70 @@ export class PresenceController{
             return;
         }
     }
-
     static async createPresence(req: Request, res: Response) {
         try {
-            const { userId } = req.body;
+            const { userId, roomId } = req.body;
 
-            if (!userId) {
-                res.status(HttpCodes.BAD_REQUEST).json({ error: "User ID is required." });
-                return
+            if (!userId || !roomId) {
+                res.status(HttpCodes.BAD_REQUEST).json({ error: "User ID and Room ID are required." });
+                return;
             }
 
             const user = await UserModel.findByPk(userId);
             if (!user) {
                 res.status(HttpCodes.NOT_FOUND).json({ error: "User not found." });
-                return
+                return;
             }
+            let presence = await PresenceModel.findOne({ where: { userId, roomId } });
 
-            let presence = await PresenceModel.findOne({ where: { userId } });
+            const currentDate = moment();
+            const currentYear = currentDate.year();
+            const currentMonth = currentDate.month() + 1;
 
             if (presence) {
                 presence.presenceCount += 1;
+                if (moment(presence.createdAt).year() === currentYear) {
+                    presence.annualPresenceCount += 1;
+                } else {
+                    presence.annualPresenceCount = 1;
+                }
+
+                if (moment(presence.createdAt).month() + 1 === currentMonth) {
+                    presence.monthlyPresenceCount += 1;
+                } else {
+                    presence.monthlyPresenceCount = 1;
+                }
+
                 await presence.save();
 
-                // Atualiza o campo attendance do User com o novo presenceCount
-                await user.update({ attendance: presence.presenceCount });
 
-                logger.info(`Presence updated for user: ${userId}`);
+                logger.info(`Presence updated for user: ${userId} in room: ${roomId}`);
                 res.status(HttpCodes.OK).json({
                     message: "Presence updated successfully",
                     presence: presence,
                 });
-                return
+                return;
             }
 
-            // Caso não exista presença anterior, cria
             presence = await PresenceModel.create({
                 userId,
+                roomId,
                 presenceCount: 1,
+                annualPresenceCount: 1,
+                monthlyPresenceCount: 1,
             });
 
-            await user.update({ attendance: presence.presenceCount });
-
-            logger.info(`Presence created for user: ${userId} - ${__filename}`);
+            logger.info(`Presence created for user: ${userId} in room: ${roomId}`);
             res.status(HttpCodes.CREATED).json({
                 message: "Presence recorded successfully",
                 presence: presence,
             });
-            return
+            return;
 
         } catch (error) {
             logger.error(`Error creating presence: ${error} - ${__filename}`);
-            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
-            return
+            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
+            return;
         }
     }
 

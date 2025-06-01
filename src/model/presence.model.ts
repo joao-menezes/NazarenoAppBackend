@@ -5,7 +5,10 @@ import sequelize from "../config/sequelize.database.config";
 class PresenceModel extends Model<PresenceInterface, PresenceOptional> implements PresenceInterface {
     public presenceId!: string;
     public userId!: string;
+    public roomId!: string;
     public presenceCount!: number;
+    public annualPresenceCount!: number;
+    public monthlyPresenceCount!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -22,8 +25,30 @@ PresenceModel.init(
         userId: {
             type: DataTypes.UUID,
             allowNull: false,
+            references: {
+                model: 'users',
+                key: "userId",
+            }
+        },
+        roomId: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: 'rooms',
+                key: "roomId",
+            }
         },
         presenceCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+            allowNull: false,
+        },
+        annualPresenceCount: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0,
+            allowNull: false,
+        },
+        monthlyPresenceCount: {
             type: DataTypes.INTEGER,
             defaultValue: 0,
             allowNull: false,

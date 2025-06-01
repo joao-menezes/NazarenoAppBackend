@@ -19,6 +19,13 @@ export class SharedErrors {
         };
     }
 
+    static get RoomNotFound(){
+        return {
+            code: HttpCodes.NOT_FOUND,
+            message: 'Room Not Found'
+        };
+    }
+
     static get PresenceNotFound(){
         return {
             code: HttpCodes.NOT_FOUND,

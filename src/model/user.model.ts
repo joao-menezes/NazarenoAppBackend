@@ -6,12 +6,12 @@ import {RoleEnum} from "../shared/utils/enums/role.enum";
 class UserModel extends Model<User, UserOptional> implements User {
     public userId!: string;
     public username!: string;
-    public userPicUrl!: string ;
+    public userPicUrl!: string;
     public birthDate!: Date;
-    public roomName!: string;
+    public roomId?: string;
     public role!: RoleEnum;
+    public isProfessor!: boolean;
     public phoneNumber!: string;
-    public attendance!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -41,18 +41,26 @@ UserModel.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        roomName: {
-            type: DataTypes.STRING,
-            allowNull: false,
+        roomId: {
+            defaultValue: "none",
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'rooms',
+                key: 'roomId',
+            },
+            onUpdate: 'CASCADE',
+            onDelete: 'SET NULL',
         },
         phoneNumber: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        attendance: {
-            type: DataTypes.NUMBER,
-            allowNull: false,
-        },
+        isProfessor: {
+            defaultValue: false,
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+        }
     },
     {
         sequelize,
