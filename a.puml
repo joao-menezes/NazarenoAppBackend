@@ -1,0 +1,55 @@
+@startuml SystemArchitecture
+
+!theme vibrant
+
+actor "Usuário Final" as User
+
+package "Frontend (React Native)" <<Node>> {
+  component "Aplicativo React Native" as ReactNativeApp
+}
+
+package "Backend (API TypeScript)" <<Node>> {
+  component "API RESTful" as BackendAPI
+  component "Módulos da API" as APIModules {
+    component "Autenticação/Autorização" as AuthModule
+    component "Gerenciamento (Usuários, Salas, Aulas)" as UserMgmtModule
+    component "Registro de Presença" as AttendanceModule
+    component "Relatórios (Cálculos & Geração PDF)" as ReportingModule
+  }
+  BackendAPI --> APIModules
+}
+
+database "Banco de Dados (MySQL)" as Database {
+  folder "Tabelas Principais" {
+    entity "Users"
+    entity "Roles"
+    entity "Rooms"
+    entity "Classes"
+    entity "Attendance_Records"
+  }
+}
+
+cloud "Armazenamento de Imagens (ex: S3)" as ImageStorage
+
+' Relacionamentos
+User --> ReactNativeApp : Interage com
+ReactNativeApp <--> BackendAPI : HTTPS/REST
+BackendAPI <--> Database : SQL
+
+' Interações com Armazenamento de Imagens
+ReactNativeApp ..> ImageStorage : Upload/Download Fotos
+BackendAPI ..> ImageStorage : Gerencia URLs/Acesso
+
+@enduml
+
+**Explicação do Diagrama PlantUML:**
+
+Este diagrama representa a mesma arquitetura de alto nível, mas usando a sintaxe PlantUML:
+
+*   **Ator:** O `Usuário Final` que interage com o sistema.
+*   **Pacotes (Nodes):** Representam as principais camadas: `Frontend (React Native)` e `Backend (API TypeScript)`.
+*   **Componentes:** Detalham os elementos dentro de cada camada, como o `Aplicativo React Native`, a `API RESTful` e os `Módulos da API` (Autenticação, Gerenciamento, Presença, Relatórios).
+*   **Database:** Representa o banco de dados `MySQL`, com as `Tabelas Principais` agrupadas dentro.
+*   **Cloud:** Simboliza o `Armazenamento de Imagens` externo.
+*   **Relacionamentos:** As setas indicam o fluxo de comunicação (ex: `ReactNativeApp <--> BackendAPI` para comunicação bidirecional via HTTPS/REST, `BackendAPI <--> Database` para interação SQL).
+*   **Interações pontilhadas:** Mostram a comunicação com o armazenamento de imagens, que pode ocorrer tanto do frontend quanto do backend.

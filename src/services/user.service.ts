@@ -20,9 +20,13 @@ export class UserService {
         }
     }
 
-    async findById(userId: string) {
+    static async findByUsername(username: string) {
         try {
-            return await UserModel.findByPk(userId);
+            return await UserModel.findOne({
+                where: {
+                    username: username
+                }
+            });
         } catch (error) {
             throw new Error(`Error fetching users: ${error}`);
         }
@@ -87,4 +91,15 @@ export class UserService {
 
         return newRoomId;
     }
+
+    static calculateAge(birthDate: Date): number {
+        const today = new Date();
+        const birth = new Date(birthDate);
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+        return age;
     }
+}

@@ -8,16 +8,6 @@ import {UserService} from "../services/user.service";
 
 export class UserController{
 
-    private static calculateAge(birthDate: Date): number {
-        const today = new Date();
-        const birth = new Date(birthDate);
-        let age = today.getFullYear() - birth.getFullYear();
-        const monthDiff = today.getMonth() - birth.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-            age--;
-        }
-        return age;
-    }
 
 
     static async getUsers(req: Request, res: Response): Promise<void> {
@@ -71,7 +61,7 @@ export class UserController{
                 return;
             }
 
-            const userRole = isProfessor ? RoleEnum.Professor : role;
+            const userRole = isProfessor ? RoleEnum.PROFESSOR : role;
 
             const user: UserModel = await UserModel.create({
                 username,
@@ -103,7 +93,7 @@ export class UserController{
                 message: 'User created successfully',
                 user: {
                     ...user.get(),
-                    age: this.calculateAge(user.birthDate),
+                    age: UserService.calculateAge(user.birthDate),
                 },
             });
         } catch (error: any) {
@@ -196,7 +186,7 @@ export class UserController{
                 message: 'User updated successfully',
                 user: {
                     ...updatedUser.get(),
-                    age: this.calculateAge(updatedUser.birthDate),
+                    age: UserService.calculateAge(updatedUser.birthDate),
                 }
             });
         } catch (error: any) {
