@@ -5,6 +5,7 @@ import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 import UserModel from "../model/user.model";
 import {RoomHelper} from "../shared/utils/room.helper"
+import {UserService} from "../services/user.service";
 
 export class RoomController {
     static async getRooms(req: Request, res: Response): Promise<void> {
@@ -48,11 +49,7 @@ export class RoomController {
                 professorsId,
             });
 
-            const professor = await UserModel.findOne({
-                where: {
-                    userId: professorsId,
-                },
-            });
+            const professor = await UserService.findOne(professorsId);
 
             if (!professor) {
                 res.status(HttpCodes.BAD_REQUEST).json({

@@ -12,11 +12,28 @@ export class UserService {
         }
     }
 
-    static async findById(userId: string) {
+    static async findByPk(userId: string) {
         try {
             return await UserModel.findByPk(userId);
+        } catch (error: any) {
+            logger.error(`UserService.findByPk - Failed to fetch user with ID: ${userId}`, error);
+            throw new Error(`Database error while fetching user with ID: ${userId}`);
+        }
+    }
+
+    static async findOne(userId: string) {
+        try {
+            return await UserModel.findOne({ where: { userId } });
         }catch (error) {
-            throw new Error(`Error fetching users: ${error}`);
+            throw new Error(`Error find user: ${error}`);
+        }
+    }
+
+    static async destroy(userId: string) {
+        try {
+            return await UserModel.destroy({ where: { userId } });
+        }catch (error) {
+            throw new Error(`Error deleting users: ${error}`);
         }
     }
 

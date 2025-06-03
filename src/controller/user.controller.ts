@@ -8,8 +8,6 @@ import {UserService} from "../services/user.service";
 
 export class UserController{
 
-
-
     static async getUsers(req: Request, res: Response): Promise<void> {
         try {
             const users = await UserService.findAll();
@@ -29,7 +27,7 @@ export class UserController{
     static async getUserById(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
-            const user: UserModel | null = await UserService.findById(userId);
+            const user: UserModel | null = await UserService.findByPk(userId);
             if (!user){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
@@ -118,7 +116,7 @@ export class UserController{
                 return;
             }
 
-            const user = await UserModel.findOne({ where: { userId } });
+            const user: UserModel | null = await UserService.findByPk(userId);
             if (!user) {
                 res.status(HttpCodes.NOT_FOUND).json({ error: SharedErrors.UserNotFound });
                 return;
@@ -141,7 +139,7 @@ export class UserController{
             if (phoneNumber !== undefined) updateFields.phoneNumber = phoneNumber;
             if (userPicUrl !== undefined) updateFields.userPicUrl = userPicUrl;
 
-            let newRoomId = user.roomId;
+            let newRoomId: string | undefined = user.roomId;
 
             if (roomName !== undefined) {
                 try {
@@ -171,7 +169,7 @@ export class UserController{
                 logger.info(`No basic fields to update for user ${userId}. Only room association might have changed.`);
             }
 
-            const updatedUser = await UserModel.findOne({ where: { userId } });
+            const updatedUser: UserModel | null = await UserService.findByPk(userId);
             if (!updatedUser) {
                 logger.error(`Failed to retrieve updated user data for ${userId} after update attempt.`);
                 res.status(HttpCodes.INTERNAL_SERVER_ERROR).json({
@@ -198,8 +196,8 @@ export class UserController{
     static async deleteUsers(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
+            const user: number = await UserService.destroy(userId);
 
-            const user = await UserModel.destroy({where: { userId: userId}});
             if (!user){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;

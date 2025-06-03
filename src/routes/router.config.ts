@@ -5,6 +5,6 @@ export const routesConfig = [
     {
         path: "/api",
         router: mainRoutes,
-        middlewares: [authLimiter]
+        middlewares: []
     },
 ]
