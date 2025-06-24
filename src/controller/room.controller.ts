@@ -1,16 +1,16 @@
 import {Request, Response} from "express";
-import RoomModel from "../db/models/room.model";
+import Room from "../db/models/room";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
-import UserModel from "../db/models/user.model";
+import User from "../db/models/user";
 import {RoomHelper} from "../shared/utils/room.helper"
 import {UserService} from "../services/user.service";
 
 export class RoomController {
     static async getRooms(req: Request, res: Response): Promise<void> {
         try {
-            const rooms = await RoomModel.findAll();
+            const rooms = await Room.findAll();
 
             if (!rooms) {
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
@@ -44,7 +44,7 @@ export class RoomController {
                 return;
             }
 
-            const room = await RoomModel.create({
+            const room = await Room.create({
                 roomName,
                 professorsList,
             });
@@ -82,7 +82,7 @@ export class RoomController {
             const { roomId } = req.params;
             const { roomName, professorsList, classes, studentsList, attendances } = req.body;
 
-            const room = await RoomModel.findOne({ where: { roomId } });
+            const room = await Room.findOne({ where: { roomId } });
 
             if (!room) {
                 res.status(HttpCodes.NOT_FOUND).json({
@@ -92,7 +92,7 @@ export class RoomController {
                 return
             }
 
-            const updatedRoomData: Partial<RoomModel> = {
+            const updatedRoomData: Partial<Room> = {
                 roomName,
                 professorsList,
                 classes,
@@ -154,7 +154,7 @@ export class RoomController {
         try {
             const { roomId } = req.params;
 
-            const room = await RoomModel.findOne({ where: { roomId: roomId } });
+            const room = await Room.findOne({ where: { roomId: roomId } });
 
             if (!room) {
                 res.status(HttpCodes.BAD_REQUEST).json({

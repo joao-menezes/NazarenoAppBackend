@@ -1,11 +1,11 @@
 import {Request, Response} from "express";
-import UserModel from "../db/models/user.model";
+import User from "../db/models/user";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 import {RoleEnum} from "../shared/utils/enums/role.enum";
 import {UserService} from "../services/user.service";
-import RoomModel from "../db/models/room.model";
+import Room from "../db/models/room";
 import {Sequelize} from "sequelize";
 
 export class UserController{
@@ -28,7 +28,7 @@ export class UserController{
     static async getUserById(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
-            const user: UserModel | null = await UserService.findByPk(userId);
+            const user: User | null = await UserService.findByPk(userId);
             if (!user){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
@@ -60,7 +60,7 @@ export class UserController{
                 return;
             }
 
-            const user: UserModel = await UserModel.create({
+            const user: User = await User.create({
                 username,
                 birthDate,
                 role,
@@ -119,7 +119,7 @@ export class UserController{
                 return;
             }
 
-            const user: UserModel | null = await UserService.findByPk(userId);
+            const user: User | null = await UserService.findByPk(userId);
             if (!user) {
                 res.status(HttpCodes.NOT_FOUND).json({ error: SharedErrors.UserNotFound });
                 return;
@@ -135,7 +135,7 @@ export class UserController{
                 logger.warn(`Attempt to update role for professor ${userId} ignored.`);
             }
 
-            const updateFields: Partial<UserModel> = {};
+            const updateFields: Partial<User> = {};
             if (username !== undefined) updateFields.username = username;
             if (birthDate !== undefined) updateFields.birthDate = birthDate;
             if (role !== undefined) updateFields.role = role;
@@ -172,7 +172,7 @@ export class UserController{
                 logger.info(`No basic fields to update for user ${userId}. Only room association might have changed.`);
             }
 
-            const updatedUser: UserModel | null = await UserService.findByPk(userId);
+            const updatedUser: User | null = await UserService.findByPk(userId);
             if (!updatedUser) {
                 logger.error(`Failed to retrieve updated user data for ${userId} after update attempt.`);
                 res.status(HttpCodes.INTERNAL_SERVER_ERROR).json({
@@ -206,7 +206,7 @@ export class UserController{
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
             }
-            const roomsContainingUser = await RoomModel.findAll({
+            const roomsContainingUser = await Room.findAll({
                 where: Sequelize.literal(`JSON_CONTAINS(studentsList, '"${userId}"')`)
             });
 

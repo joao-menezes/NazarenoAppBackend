@@ -1,7 +1,7 @@
 import {Optional} from "sequelize";
 import {RoleEnum} from "../shared/utils/enums/role.enum";
 
-export interface User {
+export interface UserAttributes {
     userId: string;
     userPicUrl?: string,
     username: string,
@@ -11,4 +11,4 @@ export interface User {
     phoneNumber?: string
 }
 
-export interface UserOptional extends Optional<User, 'userId'> {}
+export interface UserOptional extends Optional<UserAttributes, 'userId'> {}

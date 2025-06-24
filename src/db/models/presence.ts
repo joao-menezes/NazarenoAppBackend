@@ -1,8 +1,8 @@
 import {DataTypes, Model} from "sequelize";
-import {PresenceInterface, PresenceOptional} from "../../interface/presence.interface";
-import sequelize from "../../config/sequelize.database.config";
+import {PresenceAttributes, PresenceOptional} from "../../interface/presenceAttributes";
+import sequelize from "../config/sequelize.database.config";
 
-class PresenceModel extends Model<PresenceInterface, PresenceOptional> implements PresenceInterface {
+class Presence extends Model<PresenceOptional> implements PresenceAttributes {
     public presenceId!: string;
     public userId!: string;
     public roomId!: string;
@@ -14,7 +14,7 @@ class PresenceModel extends Model<PresenceInterface, PresenceOptional> implement
     public readonly updatedAt!: Date;
 }
 
-PresenceModel.init(
+Presence.init(
     {
         presenceId: {
             type: DataTypes.UUID,
@@ -62,4 +62,4 @@ PresenceModel.init(
     }
 )
 
-export default PresenceModel;
+export default Presence;

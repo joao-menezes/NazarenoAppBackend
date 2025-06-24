@@ -1,6 +1,6 @@
 import {Optional} from "sequelize";
 
-export interface Room {
+export interface RoomAttributes {
     roomId: string;
     roomName: string;
     studentsList?: string[];
@@ -9,4 +9,4 @@ export interface Room {
     classes?: number;
 }
 
-export interface RoomOptional extends Optional<Room, 'roomId'> {}
+export interface RoomOptional extends Optional<RoomAttributes, 'roomId'> {}

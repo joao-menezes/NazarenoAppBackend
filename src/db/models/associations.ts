@@ -1,17 +1,17 @@
-import UserModel from './user.model';
-import PresenceModel from "./presence.model";
-import RoomModel from "./room.model";
+import User from './user';
+import Presence from "./presence";
+import Room from "./room";
 
 export const setupAssociations = () => {
     // User - Presence (1:N)
-    UserModel.hasMany(PresenceModel, {
+    User.hasMany(Presence, {
         foreignKey: 'userId',
         as: 'presences',
         onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
     });
 
-    PresenceModel.belongsTo(UserModel, {
+    Presence.belongsTo(User, {
         foreignKey: 'userId',
         as: 'user',
         onDelete: 'SET NULL',
@@ -19,14 +19,14 @@ export const setupAssociations = () => {
     });
 
     // Room - Presence (1:N)
-    RoomModel.hasMany(PresenceModel, {
+    Room.hasMany(Presence, {
         foreignKey: 'roomId',
         as: 'presences',
         onDelete: 'SET NULL',
         onUpdate: 'CASCADE',
     });
 
-    PresenceModel.belongsTo(RoomModel, {
+    Presence.belongsTo(Room, {
         foreignKey: 'roomId',
         as: 'room',
         onDelete: 'SET NULL',

@@ -1,9 +1,9 @@
 import PDFDocument from 'pdfkit';
 import axios from 'axios';
 import { Response } from 'express';
-import UserModel from '../db/models/user.model';
-import PresenceModel from '../db/models/presence.model';
-import RoomModel from '../db/models/room.model';
+import User from '../db/models/user';
+import Presence from '../db/models/presence';
+import Room from '../db/models/room';
 import { RoleEnum } from '../shared/utils/enums/role.enum';
 import logger from '../shared/utils/logger';
 
@@ -51,7 +51,7 @@ export class PDFService {
         try {
             logger.info('Iniciando busca de dados para o relatório em PDF.');
 
-            const allUsers = await UserModel.findAll({
+            const allUsers = await User.findAll({
                 attributes: ['userId', 'username', 'role', 'roomId', 'userPicUrl'],
                 order: [['username', 'ASC']],
             });
@@ -64,12 +64,12 @@ export class PDFService {
 
                 try {
                     if (user.roomId && user.roomId !== 'none') {
-                        const room = await RoomModel.findByPk(user.roomId, {
+                        const room = await Room.findByPk(user.roomId, {
                             attributes: ['roomName'],
                         });
                         roomName = room ? room.roomName : 'N/A';
 
-                        const presence = await PresenceModel.findOne({
+                        const presence = await Presence.findOne({
                             where: { userId: user.userId, roomId: user.roomId },
                             attributes: ['presenceCount'],
                         });

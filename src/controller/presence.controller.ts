@@ -1,17 +1,17 @@
 import {Request, Response} from 'express'
-import PresenceModel from "../db/models/presence.model";
+import Presence from "../db/models/presence";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
-import UserModel from "../db/models/user.model";
+import User from "../db/models/user";
 import moment from 'moment';
-import RoomModel from "../db/models/room.model";
+import Room from "../db/models/room";
 import {UserService} from "../services/user.service";
 
 export class PresenceController{
     static async getPresence(req: Request, res: Response){
         try{
-            const presence: PresenceModel[] = await PresenceModel.findAll()
+            const presence: Presence[] = await Presence.findAll()
 
             if(!presence.length){
                 res.status(HttpCodes.NOT_FOUND).json("Not Found")
@@ -39,8 +39,8 @@ export class PresenceController{
             const uniqueRoomIds = [...new Set(presences.map(p => p.roomId).filter(Boolean))];
 
             const [users, rooms] = await Promise.all([
-                UserModel.findAll({ where: { userId: uniqueUserIds } }), // Assumindo que UserService.findAll aceita um array de IDs
-                RoomModel.findAll({ where: { roomId: uniqueRoomIds } })
+                User.findAll({ where: { userId: uniqueUserIds } }), // Assumindo que UserService.findAll aceita um array de IDs
+                Room.findAll({ where: { roomId: uniqueRoomIds } })
             ]);
 
             const userMap = new Map(users.map(u => [u.userId, u])); // Assumindo que o ID do usuário é 'id'
@@ -89,7 +89,7 @@ export class PresenceController{
                     };
                 }
 
-                let presenceRecord = await PresenceModel.findOne({ where: { userId, roomId } });
+                let presenceRecord = await Presence.findOne({ where: { userId, roomId } });
 
                 const currentDate = moment();
                 const currentYear = currentDate.year();
@@ -131,7 +131,7 @@ export class PresenceController{
 
                 } else {
                     // Criar novo registro de presença
-                    const newPresence = await PresenceModel.create({
+                    const newPresence = await Presence.create({
                         userId,
                         roomId,
                         presenceCount: 1,
@@ -186,7 +186,7 @@ export class PresenceController{
         try {
             const { presenceId, userId, presenceCount } = req.body;
 
-            const presence = await PresenceModel.findOne({ where: { presenceId } });
+            const presence = await Presence.findOne({ where: { presenceId } });
 
             const user = await UserService.findByPk(userId);
             if (!user) {
@@ -199,7 +199,7 @@ export class PresenceController{
                 return;
             }
 
-            const [updatedRows] = await PresenceModel.update(
+            const [updatedRows] = await Presence.update(
                 { presenceCount },
                 { where: { presenceId, userId } }
             );

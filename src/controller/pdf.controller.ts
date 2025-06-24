@@ -14,7 +14,7 @@ export class PdfController {
                 return
             }
 
-            pdfService.generateAttendanceReport(res);
+            await pdfService.generateAttendanceReport(res);
 
         } catch (error) {
             console.error('Erro na geração do PDF:', error);

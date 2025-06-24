@@ -1,5 +1,5 @@
-import UserModel from "../db/models/user.model";
-import RoomModel from "../db/models/room.model";
+import User from "../db/models/user";
+import Room from "../db/models/room";
 import logger from "../shared/utils/logger";
 import {RoleEnum} from "../shared/utils/enums/role.enum";
 
@@ -7,7 +7,7 @@ export class UserService {
 
     static async findAll() {
         try {
-            return await UserModel.findAll();
+            return await User.findAll();
         } catch (error) {
             throw new Error(`Error fetching users: ${error}`);
         }
@@ -15,7 +15,7 @@ export class UserService {
 
     static async findByPk(userId: string) {
         try {
-            return await UserModel.findByPk(userId);
+            return await User.findByPk(userId);
         } catch (error: any) {
             logger.error(`UserService.findByPk - Failed to fetch user with ID: ${userId}`, error);
             throw new Error(`Database error while fetching user with ID: ${userId}`);
@@ -24,7 +24,7 @@ export class UserService {
 
     static async findOne(userId: string) {
         try {
-            return await UserModel.findOne({ where: { userId } });
+            return await User.findOne({ where: { userId } });
         }catch (error) {
             throw new Error(`Error find user: ${error}`);
         }
@@ -32,26 +32,14 @@ export class UserService {
 
     static async destroy(userId: string) {
         try {
-            return await UserModel.destroy({ where: { userId } });
+            return await User.destroy({ where: { userId } });
         }catch (error) {
             throw new Error(`Error deleting users: ${error}`);
         }
     }
 
-    static async findByUsername(username: string) {
-        try {
-            return await UserModel.findOne({
-                where: {
-                    username: username
-                }
-            });
-        } catch (error) {
-            throw new Error(`Error fetching users: ${error}`);
-        }
-    }
-
     static async associateUserWithRoom(userId: string, roomId: string, role: RoleEnum): Promise<void> {
-            const room: RoomModel | null = await RoomModel.findOne({
+            const room: Room | null = await Room.findOne({
                 where: {
                     roomId,
                 },
@@ -71,7 +59,7 @@ export class UserService {
         }
 
     static async updateUserRoomAssociation(userId: string, oldRoomId: string | undefined, newRoomName: string): Promise<string> { // Returns the new roomId
-        const newRoom: RoomModel | null = await RoomModel.findOne({ where: { roomName: newRoomName } });
+        const newRoom: Room | null = await Room.findOne({ where: { roomName: newRoomName } });
         if (!newRoom) {
             throw new Error(`Room with name "${newRoomName}" not found.`);
         }
@@ -86,7 +74,7 @@ export class UserService {
         // Remove user from the old room's studentsId list (assuming they are a student)
         // Add logic here if professors should also be removed/added from other lists
         if (oldRoomId) {
-            const oldRoom: RoomModel | null = await RoomModel.findOne({ where: { roomId: oldRoomId } });
+            const oldRoom: Room | null = await Room.findOne({ where: { roomId: oldRoomId } });
             if (oldRoom && oldRoom.studentsList?.includes(userId)) {
                 const updatedOldStudentsId = oldRoom.studentsList.filter(id => id !== userId);
                 await oldRoom.update({ studentsList: updatedOldStudentsId });

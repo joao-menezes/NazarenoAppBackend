@@ -1,4 +1,4 @@
-import sequelize from "../config/sequelize.database.config";
+import sequelize from "../db/config/sequelize.database.config";
 import express, { Express } from 'express';
 import logger from "../shared/utils/logger";
 import cors from "cors";

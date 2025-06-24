@@ -1,6 +1,6 @@
 import {Optional} from "sequelize";
 
-export interface PresenceInterface {
+export interface PresenceAttributes {
     presenceId: string;
     userId: string;
     roomId: string;
@@ -9,4 +9,4 @@ export interface PresenceInterface {
     monthlyPresenceCount: number
 }
 
-export interface PresenceOptional extends Optional<PresenceInterface, 'presenceId'> {}
+export interface PresenceOptional extends Optional<PresenceAttributes, 'presenceId'> {}

@@ -1,8 +1,8 @@
 import {DataTypes, Model} from "sequelize";
-import sequelize from "../../config/sequelize.database.config";
-import {Room, RoomOptional} from "../../interface/room.interface";
+import sequelize from "../config/sequelize.database.config";
+import {RoomAttributes, RoomOptional} from "../../interface/room.interface";
 
-class RoomModel extends Model<RoomOptional> implements Room {
+class Room extends Model<RoomOptional> implements RoomAttributes {
     public roomId!: string;
     public roomName!: string;
     public attendances?: number;
@@ -12,11 +12,9 @@ class RoomModel extends Model<RoomOptional> implements Room {
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
-
-
 }
 
-RoomModel.init(
+Room.init(
     {
         roomId: {
             type: DataTypes.UUID,
@@ -56,4 +54,4 @@ RoomModel.init(
     }
 )
 
-export default RoomModel;
+export default Room;
