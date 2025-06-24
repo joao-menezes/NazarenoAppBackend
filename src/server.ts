@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 import { HttpService } from './services/http.service';
 
 async function server() {

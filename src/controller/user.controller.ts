@@ -1,13 +1,14 @@
 import {Request, Response} from "express";
-import UserModel from "../model/user.model";
+import UserModel from "../db/models/user.model";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 import {RoleEnum} from "../shared/utils/enums/role.enum";
 import {UserService} from "../services/user.service";
+import RoomModel from "../db/models/room.model";
+import {Sequelize} from "sequelize";
 
 export class UserController{
-
     static async getUsers(req: Request, res: Response): Promise<void> {
         try {
             const users = await UserService.findAll();
@@ -19,7 +20,7 @@ export class UserController{
             res.status(HttpCodes.OK).json({ Users: users });
         } catch (error) {
             logger.error(`Error getting user: ${error} - ${__filename}`);
-            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
+            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.UserNotFound);
             return;
         }
     }
@@ -43,7 +44,7 @@ export class UserController{
 
     static async createUser(req: Request, res: Response): Promise<void> {
         try {
-            const { username, birthDate, role, phoneNumber, userPicUrl, isProfessor, roomId } = req.body;
+            const { username, birthDate, role, phoneNumber, userPicUrl, roomId } = req.body;
 
             if (!username || !birthDate || !role) {
                 res.status(HttpCodes.BAD_REQUEST).json({
@@ -52,27 +53,24 @@ export class UserController{
                 return;
             }
 
-            if (!isProfessor && !Object.values(RoleEnum).includes(role)) {
+            if (!Object.values(RoleEnum).includes(role)) {
                 res.status(HttpCodes.BAD_REQUEST).json({
                     error: 'Invalid role provided.',
                 });
                 return;
             }
 
-            const userRole = isProfessor ? RoleEnum.PROFESSOR : role;
-
             const user: UserModel = await UserModel.create({
                 username,
                 birthDate,
-                role: userRole,
+                role,
                 phoneNumber,
                 userPicUrl,
-                isProfessor,
             });
 
             if (roomId) {
                 try {
-                    await UserService.associateUserWithRoom(user.userId, roomId, isProfessor);
+                    await UserService.associateUserWithRoom(user.userId, roomId, role);
                 } catch (roomError: any) {
                     logger.error(`Error associating user ${user.userId} with room ${roomId}: ${roomError.message} - ${__filename}`);
                     if (roomError.message === 'Room not found.') {
@@ -109,7 +107,12 @@ export class UserController{
             const { userId } = req.params;
             const { username, birthDate, role, phoneNumber, roomName, userPicUrl } = req.body;
 
-            if (username === undefined && birthDate === undefined && role === undefined && phoneNumber === undefined && roomName === undefined && userPicUrl === undefined) {
+            if (username === undefined &&
+                birthDate === undefined &&
+                role === undefined &&
+                phoneNumber === undefined &&
+                roomName === undefined &&
+                userPicUrl === undefined) {
                 res.status(HttpCodes.BAD_REQUEST).json({
                     error: 'At least one valid field must be provided to update the user.',
                 });
@@ -122,20 +125,20 @@ export class UserController{
                 return;
             }
 
-            if (role !== undefined && !user.isProfessor && !Object.values(RoleEnum).includes(role)) {
+            if (role !== undefined && !Object.values(RoleEnum).includes(role)) {
                 res.status(HttpCodes.BAD_REQUEST).json({
                     error: 'Invalid role provided for a non-professor user.',
                 });
                 return;
             }
-            if (role !== undefined && user.isProfessor) {
+            if (role !== undefined ) {
                 logger.warn(`Attempt to update role for professor ${userId} ignored.`);
             }
 
             const updateFields: Partial<UserModel> = {};
             if (username !== undefined) updateFields.username = username;
             if (birthDate !== undefined) updateFields.birthDate = birthDate;
-            if (role !== undefined && !user.isProfessor) updateFields.role = role;
+            if (role !== undefined) updateFields.role = role;
             if (phoneNumber !== undefined) updateFields.phoneNumber = phoneNumber;
             if (userPicUrl !== undefined) updateFields.userPicUrl = userPicUrl;
 
@@ -196,17 +199,31 @@ export class UserController{
     static async deleteUsers(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
-            const user: number = await UserService.destroy(userId);
 
-            if (!user){
+            const userDeletedCount: number = await UserService.destroy(userId);
+
+            if (userDeletedCount === 0) {
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
             }
+            const roomsContainingUser = await RoomModel.findAll({
+                where: Sequelize.literal(`JSON_CONTAINS(studentsList, '"${userId}"')`)
+            });
 
-            logger.info(`User deleted successfully: ${__filename}`);
-            res.status(HttpCodes.OK).json({ message: "User deleted successfully" });
+            for (const room of roomsContainingUser) {
+                let currentStudents: string[] = Array.isArray(room.studentsList) ? room.studentsList : [];
+
+                const updatedStudents = currentStudents.filter(studentId => studentId !== userId);
+
+                await room.update({
+                    studentsList: updatedStudents
+                });
+            }
+
+            logger.info(`User removed with successfully: ${userId} - ${__filename}`);
+            res.status(HttpCodes.NO_CONTENT).send();
         } catch (error) {
-            logger.error(`Error deleting user: ${error} - ${__filename}`);
+            logger.error(`Error to remove user: ${error} - ${__filename}`);
             res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
             return;
         }

@@ -8,7 +8,6 @@ export interface User {
     birthDate: Date,
     roomId?: string,
     role: RoleEnum,
-    isProfessor?: boolean,
     phoneNumber?: string
 }
 

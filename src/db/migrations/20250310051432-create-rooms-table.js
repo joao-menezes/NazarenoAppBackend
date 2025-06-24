@@ -23,7 +23,11 @@ module.exports = {
         defaultValue: 0,
         allowNull: false,
       },
-      studentsId: {
+      studentsList: {
+        type: Sequelize.JSON,
+        allowNull: false,
+      },
+      professorsList: {
         type: Sequelize.JSON,
         allowNull: false,
       },

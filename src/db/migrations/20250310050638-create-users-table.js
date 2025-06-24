@@ -1,5 +1,4 @@
 import { DataTypes } from 'sequelize';
-import {RoleEnum} from "../shared/utils/enums/role.enum";
 
 export const up = async (queryInterface, Sequelize) => {
     await queryInterface.createTable('users', {
@@ -18,16 +17,23 @@ export const up = async (queryInterface, Sequelize) => {
         allowNull: false,
       },
       role: {
-        type: DataTypes.ENUM(...Object.values(RoleEnum)),
+        type: DataTypes.ENUM('ADMIN','STUDENT','PROFESSOR'),
         allowNull: false,
       },
       userPicUrl: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      roomName: {
-        type: DataTypes.STRING,
+      roomId: {
+        type: DataTypes.TEXT,
         allowNull: false,
+        get() {
+          const rawValue = this.getDataValue('roomId');
+          return rawValue ? JSON.parse(rawValue) : [];
+        },
+        set(value) {
+          this.setDataValue('roomId', JSON.stringify(value));
+        }
       },
       phoneNumber: {
         type: DataTypes.STRING,

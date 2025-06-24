@@ -18,7 +18,27 @@ export const up = async (queryInterface, Sequelize) => {
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
     },
+    roomId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'rooms',
+        key: 'roomId',
+      },
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+    },
     presenceCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    monthlyPresenceCount:{
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+    },
+    annualPresenceCount: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false,

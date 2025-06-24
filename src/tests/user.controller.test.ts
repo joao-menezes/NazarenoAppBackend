@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { UserController } from "../controller/user.controller";
-import UserModel from "../model/user.model";
+import UserModel from "../db/models/user.model";
 import HttpCodes from "http-status-codes";
 import { SharedErrors } from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
 
-jest.mock("../model/user.model");
+jest.mock("../db/models/user.model");
 jest.mock("../shared/utils/logger");
 
 describe("UserController.getUsers", () => {

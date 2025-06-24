@@ -1,6 +1,7 @@
-import UserModel from "../model/user.model";
-import RoomModel from "../model/room.model";
+import UserModel from "../db/models/user.model";
+import RoomModel from "../db/models/room.model";
 import logger from "../shared/utils/logger";
+import {RoleEnum} from "../shared/utils/enums/role.enum";
 
 export class UserService {
 
@@ -49,7 +50,7 @@ export class UserService {
         }
     }
 
-    static async associateUserWithRoom(userId: string, roomId: string, isProfessor: boolean): Promise<void> {
+    static async associateUserWithRoom(userId: string, roomId: string, role: RoleEnum): Promise<void> {
             const room: RoomModel | null = await RoomModel.findOne({
                 where: {
                     roomId,
@@ -60,13 +61,13 @@ export class UserService {
                 throw new Error('Room not found.');
             }
 
-            const updatedStudentsId: string[] = room.studentsId ? [...room.studentsId, userId] : [userId];
+            const updatedStudentsId: string[] = room.studentsList ? [...room.studentsList, userId] : [userId];
 
             await room.update({
-                studentsId: updatedStudentsId,
+                studentsList: updatedStudentsId,
             });
 
-            logger.info(`${isProfessor ? 'Professor' : 'Student'} with ID ${userId} associated with room ${roomId} - ${__filename}`);
+            logger.info(`${role.includes(RoleEnum.PROFESSOR) ? 'Professor' : 'Student'} with ID ${userId} associated with room ${roomId} - ${__filename}`);
         }
 
     static async updateUserRoomAssociation(userId: string, oldRoomId: string | undefined, newRoomName: string): Promise<string> { // Returns the new roomId
@@ -86,9 +87,9 @@ export class UserService {
         // Add logic here if professors should also be removed/added from other lists
         if (oldRoomId) {
             const oldRoom: RoomModel | null = await RoomModel.findOne({ where: { roomId: oldRoomId } });
-            if (oldRoom && oldRoom.studentsId?.includes(userId)) {
-                const updatedOldStudentsId = oldRoom.studentsId.filter(id => id !== userId);
-                await oldRoom.update({ studentsId: updatedOldStudentsId });
+            if (oldRoom && oldRoom.studentsList?.includes(userId)) {
+                const updatedOldStudentsId = oldRoom.studentsList.filter(id => id !== userId);
+                await oldRoom.update({ studentsList: updatedOldStudentsId });
                 logger.info(`User ${userId} removed from old room ${oldRoomId}'s student list - ${__filename}`);
             } else if (oldRoom) {
                 logger.warn(`User ${userId} not found in expected old room ${oldRoomId}'s student list during update.`);
@@ -98,9 +99,9 @@ export class UserService {
         }
 
         // Add user to the new room's studentsId list (assuming they are a student)
-        if (!newRoom.studentsId?.includes(userId)) {
-            const updatedNewStudentsId = newRoom.studentsId ? [...newRoom.studentsId, userId] : [userId];
-            await newRoom.update({ studentsId: updatedNewStudentsId });
+        if (!newRoom.studentsList?.includes(userId)) {
+            const updatedNewStudentsId = newRoom.studentsList ? [...newRoom.studentsList, userId] : [userId];
+            await newRoom.update({ studentsList: updatedNewStudentsId });
             logger.info(`User ${userId} added to new room ${newRoomId}'s student list - ${__filename}`);
         } else {
             logger.info(`User ${userId} already present in new room ${newRoomId}'s student list.`);

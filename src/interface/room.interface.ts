@@ -3,8 +3,8 @@ import {Optional} from "sequelize";
 export interface Room {
     roomId: string;
     roomName: string;
-    studentsId?: string[];
-    professorsId?: string[];
+    studentsList?: string[];
+    professorsList?: string[];
     attendances?: number;
     classes?: number;
 }

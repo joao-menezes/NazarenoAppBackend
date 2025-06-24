@@ -1,7 +1,7 @@
 import {DataTypes, Model} from "sequelize";
-import {User, UserOptional} from "../interface/user.interface";
-import sequelize from "../config/sequelize.database.config";
-import {RoleEnum} from "../shared/utils/enums/role.enum";
+import {User, UserOptional} from "../../interface/user.interface";
+import sequelize from "../../config/sequelize.database.config";
+import {RoleEnum} from "../../shared/utils/enums/role.enum";
 
 class UserModel extends Model<User, UserOptional> implements User {
     public userId!: string;
@@ -10,7 +10,6 @@ class UserModel extends Model<User, UserOptional> implements User {
     public birthDate!: Date;
     public roomId?: string;
     public role!: RoleEnum;
-    public isProfessor!: boolean;
     public phoneNumber!: string;
 
     public readonly createdAt!: Date;
@@ -56,11 +55,6 @@ UserModel.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        isProfessor: {
-            defaultValue: false,
-            type: DataTypes.BOOLEAN,
-            allowNull: true,
-        }
     },
     {
         sequelize,

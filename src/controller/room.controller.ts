@@ -1,9 +1,9 @@
 import {Request, Response} from "express";
-import RoomModel from "../model/room.model";
+import RoomModel from "../db/models/room.model";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
-import UserModel from "../model/user.model";
+import UserModel from "../db/models/user.model";
 import {RoomHelper} from "../shared/utils/room.helper"
 import {UserService} from "../services/user.service";
 
@@ -28,7 +28,7 @@ export class RoomController {
 
     static async createRoom(req: Request, res: Response) {
         try {
-            const { roomName, professorsId } = req.body;
+            const { roomName, professorsList } = req.body;
 
             if (!roomName) {
                 res.status(HttpCodes.BAD_REQUEST).json({
@@ -37,7 +37,7 @@ export class RoomController {
                 return;
             }
 
-            if (!professorsId) {
+            if (!professorsList.length) {
                 res.status(HttpCodes.BAD_REQUEST).json({
                     message: "Professor's ID is required",
                 });
@@ -46,10 +46,10 @@ export class RoomController {
 
             const room = await RoomModel.create({
                 roomName,
-                professorsId,
+                professorsList,
             });
 
-            const professor = await UserService.findOne(professorsId);
+            const professor = await UserService.findOne(professorsList);
 
             if (!professor) {
                 res.status(HttpCodes.BAD_REQUEST).json({
@@ -80,7 +80,7 @@ export class RoomController {
     static async updateRoom(req: Request, res: Response) {
         try {
             const { roomId } = req.params;
-            const { roomName, professorsId, classes, studentsId, attendances } = req.body;
+            const { roomName, professorsList, classes, studentsList, attendances } = req.body;
 
             const room = await RoomModel.findOne({ where: { roomId } });
 
@@ -94,7 +94,7 @@ export class RoomController {
 
             const updatedRoomData: Partial<RoomModel> = {
                 roomName,
-                professorsId,
+                professorsList,
                 classes,
                 attendances,
             };
@@ -106,8 +106,8 @@ export class RoomController {
                     delete updatedRoomData[key as keyof typeof updatedRoomData]
             );
 
-            if (studentsId) {
-                const { operation, values } = studentsId;
+            if (studentsList.length) {
+                const { operation, values } = studentsList;
 
                 if (!Array.isArray(values)) {
                     res.status(HttpCodes.BAD_REQUEST).json({
@@ -118,8 +118,8 @@ export class RoomController {
                 }
 
                 try {
-                    updatedRoomData.studentsId = RoomHelper.handleStudentsOperation(
-                        room.studentsId,
+                    updatedRoomData.professorsList = RoomHelper.handleStudentsOperation(
+                        room.professorsList,
                         operation,
                         values
                     );
@@ -161,16 +161,14 @@ export class RoomController {
                     message: "Room not found",
                     error: SharedErrors.RoomNotFound,
                 })
+                return;
             }
 
-            const deletedRoom = await room?.destroy();
+            await room.destroy();
 
             logger.info(`Room deleted successfully - ${__filename}`);
 
-            res.status(HttpCodes.OK).json({
-                message: 'Room updated successfully',
-                room: deletedRoom,
-            });
+            res.status(HttpCodes.NO_CONTENT).send();
 
         }catch (error) {
             logger.error(`Error in deleteRoom: ${error} - ${__filename}`);

@@ -3,7 +3,7 @@ import express, { Express } from 'express';
 import logger from "../shared/utils/logger";
 import cors from "cors";
 import dotenv from "dotenv";
-import {setupAssociations} from "../model/associations";
+import {setupAssociations} from "../db/models/associations";
 
 dotenv.config();
 const _fileName = module.filename.split("/").pop();

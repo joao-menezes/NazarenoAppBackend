@@ -1,6 +1,6 @@
 import {DataTypes, Model} from "sequelize";
-import {PresenceInterface, PresenceOptional} from "../interface/presence.interface";
-import sequelize from "../config/sequelize.database.config";
+import {PresenceInterface, PresenceOptional} from "../../interface/presence.interface";
+import sequelize from "../../config/sequelize.database.config";
 
 class PresenceModel extends Model<PresenceInterface, PresenceOptional> implements PresenceInterface {
     public presenceId!: string;

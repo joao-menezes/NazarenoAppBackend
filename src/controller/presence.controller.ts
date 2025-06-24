@@ -1,11 +1,11 @@
 import {Request, Response} from 'express'
-import PresenceModel from "../model/presence.model";
+import PresenceModel from "../db/models/presence.model";
 import HttpCodes from "http-status-codes";
 import {SharedErrors} from "../shared/errors/shared-errors";
 import logger from "../shared/utils/logger";
-import UserModel from "../model/user.model";
+import UserModel from "../db/models/user.model";
 import moment from 'moment';
-import RoomModel from "../model/room.model";
+import RoomModel from "../db/models/room.model";
 import {UserService} from "../services/user.service";
 
 export class PresenceController{
@@ -26,97 +26,111 @@ export class PresenceController{
         }
     }
 
-    static async createPresence(req: Request, res: Response) {
+    static async createPresence(req: Request, res: Response): Promise<void> {
         try {
             const { presences } = req.body;
 
             if (!Array.isArray(presences) || presences.length === 0) {
-                res.status(HttpCodes.BAD_REQUEST).json({ error: "Presences array is required." });
-                return
+                res.status(HttpCodes.BAD_REQUEST).json({ error: "Presences array is required and cannot be empty." });
+                return;
             }
 
-            const results = [];
+            const uniqueUserIds = [...new Set(presences.map(p => p.userId).filter(Boolean))];
+            const uniqueRoomIds = [...new Set(presences.map(p => p.roomId).filter(Boolean))];
 
-            for (const { userId, roomId } of presences) {
+            const [users, rooms] = await Promise.all([
+                UserModel.findAll({ where: { userId: uniqueUserIds } }), // Assumindo que UserService.findAll aceita um array de IDs
+                RoomModel.findAll({ where: { roomId: uniqueRoomIds } })
+            ]);
+
+            const userMap = new Map(users.map(u => [u.userId, u])); // Assumindo que o ID do usuário é 'id'
+            const roomMap = new Map(rooms.map(r => [r.roomId, r]));
+
+            // Processar cada presença em paralelo
+            const results = await Promise.allSettled(presences.map(async ({ userId, roomId }) => {
+                // Validação básica de entrada para cada item
                 if (!userId || !roomId) {
-                    results.push({
+                    return {
                         userId,
                         roomId,
                         status: "failed",
-                        error: "User ID and Room ID are required."
-                    });
-                    continue;
+                        error: "User ID and Room ID are required for each presence entry."
+                    };
                 }
 
-                const user = await UserService.findByPk(userId);
+                const user = userMap.get(userId);
                 if (!user) {
-                    results.push({
+                    return {
                         userId,
                         roomId,
                         status: "failed",
                         error: "User not found."
-                    });
-                    continue;
+                    };
                 }
 
-                const room = await RoomModel.findByPk(roomId);
+                const room = roomMap.get(roomId);
                 if (!room) {
-                    results.push({
+                    return {
                         userId,
                         roomId,
                         status: "failed",
                         error: "Room not found."
-                    });
-                    continue;
+                    };
                 }
 
-                // const isStudentInRoom = room.studentsId?.includes(userId);
-                // if (!isStudentInRoom) {
-                //     results.push({
-                //         userId,
-                //         roomId,
-                //         status: "failed",
-                //         error: "Student does not belong to this room."
-                //     });
-                //     continue;
-                // }
+                // **IMPORTANTE:** Reativar e corrigir a verificação de estudante na sala
+                // Assumindo que room.studentsList é um array de strings (UUIDs) devido ao DataTypes.JSON
+                if (room.studentsList && !room.studentsList.includes(userId)) {
+                    return {
+                        userId,
+                        roomId,
+                        status: "failed",
+                        error: "Student does not belong to this room."
+                    };
+                }
 
-                let presence = await PresenceModel.findOne({ where: { userId, roomId } });
+                let presenceRecord = await PresenceModel.findOne({ where: { userId, roomId } });
 
                 const currentDate = moment();
                 const currentYear = currentDate.year();
                 const currentMonth = currentDate.month() + 1;
 
-                if (presence) {
-                    presence.presenceCount += 1;
+                if (presenceRecord) {
+                    presenceRecord.presenceCount += 1;
 
-                    if (moment(presence.createdAt).year() === currentYear) {
-                        presence.annualPresenceCount += 1;
+                    // **Lógica Corrigida:** Comparar com a data da última atualização (updatedAt)
+                    const lastUpdateMoment = moment(presenceRecord.updatedAt);
+
+                    if (lastUpdateMoment.year() < currentYear) {
+                        presenceRecord.annualPresenceCount = 1; // Novo ano, resetar
                     } else {
-                        presence.annualPresenceCount = 1;
+                        presenceRecord.annualPresenceCount += 1; // Mesmo ano, continuar contando
                     }
 
-                    if (moment(presence.createdAt).month() + 1 === currentMonth) {
-                        presence.monthlyPresenceCount += 1;
+                    // Se o ano mudou OU o mês mudou (dentro do mesmo ano)
+                    if (lastUpdateMoment.year() < currentYear || lastUpdateMoment.month() < currentMonth) {
+                        presenceRecord.monthlyPresenceCount = 1; // Novo mês/ano, resetar
                     } else {
-                        presence.monthlyPresenceCount = 1;
+                        presenceRecord.monthlyPresenceCount += 1; // Mesmo mês/ano, continuar contando
                     }
 
-                    await presence.save();
+                    await presenceRecord.save();
 
                     logger.info(`Presence updated for user: ${userId} in room: ${roomId}`);
 
+                    // Atualizar attendances do quarto
                     room.attendances = (room.attendances || 0) + 1;
                     await room.save();
 
-                    results.push({
+                    return {
                         userId,
                         roomId,
                         status: "updated",
-                        presence
-                    });
+                        presence: presenceRecord
+                    };
 
                 } else {
+                    // Criar novo registro de presença
                     const newPresence = await PresenceModel.create({
                         userId,
                         roomId,
@@ -125,29 +139,43 @@ export class PresenceController{
                         monthlyPresenceCount: 1,
                     });
 
+                    logger.info(`Presence created for user: ${userId} in room: ${roomId}`);
+
+                    // Atualizar attendances do quarto
                     room.attendances = (room.attendances || 0) + 1;
                     await room.save();
 
-                    logger.info(`Presence created for user: ${userId} in room: ${roomId}`);
-
-                    results.push({
+                    return {
                         userId,
                         roomId,
                         status: "created",
                         presence: newPresence
-                    });
+                    };
                 }
-            }
+            }));
+
+            // Formatar os resultados de Promise.allSettled
+            const formattedResults = results.map(result => {
+                if (result.status === 'fulfilled') {
+                    return result.value;
+                } else {
+                    // Lidar com promessas rejeitadas (erros inesperados durante o processamento de um item)
+                    logger.error(`Erro inesperado ao processar presença: ${result.reason}`);
+                    return {
+                        status: "failed",
+                        error: "An unexpected error occurred during processing for this entry."
+                    };
+                }
+            });
+
             res.status(HttpCodes.OK).json({
                 message: "Presence processing completed",
-                results
+                results: formattedResults
             });
-            return
 
         } catch (error) {
-            logger.error(`Error in createPresenceList: ${error} - ${__filename}`);
-            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json({ error: "Internal server error" });
-            return
+            logger.error(`Error in createPresence: ${error} - ${__filename}`);
+            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError); // Use SharedErrors para consistência
         }
     }
 

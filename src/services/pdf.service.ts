@@ -1,9 +1,9 @@
 import PDFDocument from 'pdfkit';
 import axios from 'axios';
 import { Response } from 'express';
-import UserModel from '../model/user.model';
-import PresenceModel from '../model/presence.model';
-import RoomModel from '../model/room.model';
+import UserModel from '../db/models/user.model';
+import PresenceModel from '../db/models/presence.model';
+import RoomModel from '../db/models/room.model';
 import { RoleEnum } from '../shared/utils/enums/role.enum';
 import logger from '../shared/utils/logger';
 

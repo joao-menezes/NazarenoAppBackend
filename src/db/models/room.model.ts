@@ -1,17 +1,19 @@
 import {DataTypes, Model} from "sequelize";
-import sequelize from "../config/sequelize.database.config";
-import {Room, RoomOptional} from "../interface/room.interface";
+import sequelize from "../../config/sequelize.database.config";
+import {Room, RoomOptional} from "../../interface/room.interface";
 
 class RoomModel extends Model<RoomOptional> implements Room {
     public roomId!: string;
     public roomName!: string;
     public attendances?: number;
-    public studentsId?: string[];
-    public professorsId?: string[];
+    public studentsList?: string[];
+    public professorsList?: string[];
     public classes?: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+
 }
 
 RoomModel.init(
@@ -36,12 +38,12 @@ RoomModel.init(
             defaultValue: 0,
             allowNull: false,
         },
-        studentsId: {
+        studentsList: {
             defaultValue: [],
             type: DataTypes.JSON,
             allowNull: true,
         },
-        professorsId: {
+        professorsList: {
             type: DataTypes.JSON,
             allowNull: false,
         }
