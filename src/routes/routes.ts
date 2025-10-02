@@ -14,6 +14,7 @@ mainRoutes.patch('/users/:userId', UserController.updateUser);
 mainRoutes.delete('/users/:userId', UserController.deleteUsers);
 
 mainRoutes.get('/presence', PresenceController.getPresence);
+mainRoutes.get('/presence/:presenceId', PresenceController.getPresenceById);
 mainRoutes.post('/presence', PresenceController.createPresence);
 mainRoutes.put('/presence', PresenceController.updatePresence);
 

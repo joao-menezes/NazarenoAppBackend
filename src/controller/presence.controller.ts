@@ -7,6 +7,7 @@ import User from "../db/models/user";
 import moment from 'moment';
 import Room from "../db/models/room";
 import {UserService} from "../services/user.service";
+import presence from "../db/models/presence";
 
 export class PresenceController{
     static async getPresence(req: Request, res: Response){
@@ -26,6 +27,25 @@ export class PresenceController{
         }
     }
 
+    static async getPresenceById(req: Request, res: Response){
+        try{
+            const {presenceId} = req.params;
+            const presence = await Presence.findByPk(presenceId)
+
+            if(!presence){
+                res.status(HttpCodes.NOT_FOUND).json("Not Found")
+            }
+
+            logger.info(`Presence retrieved successfully: ${__filename}`);
+            res.status(HttpCodes.OK).json({ Presence: presence });
+        }catch(error){
+            logger.error(`Error getting presence: ${error} - ${__filename}`);
+            res.status(HttpCodes.INTERNAL_SERVER_ERROR).json(SharedErrors.InternalServerError);
+            return;
+        }
+    }
+
+
     static async createPresence(req: Request, res: Response): Promise<void> {
         try {
             const { presences } = req.body;
@@ -39,16 +59,14 @@ export class PresenceController{
             const uniqueRoomIds = [...new Set(presences.map(p => p.roomId).filter(Boolean))];
 
             const [users, rooms] = await Promise.all([
-                User.findAll({ where: { userId: uniqueUserIds } }), // Assumindo que UserService.findAll aceita um array de IDs
+                User.findAll({ where: { userId: uniqueUserIds } }),
                 Room.findAll({ where: { roomId: uniqueRoomIds } })
             ]);
 
-            const userMap = new Map(users.map(u => [u.userId, u])); // Assumindo que o ID do usuário é 'id'
+            const userMap = new Map(users.map(u => [u.userId, u]));
             const roomMap = new Map(rooms.map(r => [r.roomId, r]));
 
-            // Processar cada presença em paralelo
             const results = await Promise.allSettled(presences.map(async ({ userId, roomId }) => {
-                // Validação básica de entrada para cada item
                 if (!userId || !roomId) {
                     return {
                         userId,

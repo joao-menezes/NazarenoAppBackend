@@ -11,7 +11,7 @@ import {Sequelize} from "sequelize";
 export class UserController{
     static async getUsers(req: Request, res: Response): Promise<void> {
         try {
-            const users = await UserService.findAll();
+                const users = await UserService.findAll();
             if (!users){
                 res.status(HttpCodes.BAD_REQUEST).json(SharedErrors.UserNotFound);
                 return;
